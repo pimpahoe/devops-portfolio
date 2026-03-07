@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Todo API</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0a0a0f;
+    --surface: #111118;
+    --border: #1e1e2e;
+    --accent: #00ff9d;
+    --accent-dim: rgba(0, 255, 157, 0.08);
+    --accent-dim2: rgba(0, 255, 157, 0.15);
+    --text: #e0e0e8;
+    --muted: #444458;
+    --danger: #ff4466;
+    --danger-dim: rgba(255, 68, 102, 0.1);
+  }
+
+  body {
+    font-family: 'JetBrains Mono', monospace;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    padding: 48px 24px;
+    background-image:
+      radial-gradient(ellipse 80% 50% at 50% -20%, rgba(0,255,157,0.05) 0%, transparent 60%);
+  }
+
+  .container {
+    max-width: 640px;
+    margin: 0 auto;
+  }
+
+  /* HEADER */
+  header {
+    margin-bottom: 48px;
+    animation: fadeDown 0.5s ease both;
+  }
+
+  .header-label {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 12px;
+  }
+
+  h1 {
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--text);
+    line-height: 1.2;
+  }
+
+  h1 span {
+    color: var(--accent);
+  }
+
+  .status-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 12px;
+    font-size: 11px;
+    color: var(--muted);
+  }
+
+  .status-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--accent);
+    box-shadow: 0 0 8px var(--accent);
+    animation: pulse 2s infinite;
+  }
+
+  /* FORM */
+  .add-form {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 32px;
+    animation: fadeDown 0.5s 0.1s ease both;
+  }
+
+  input[type="text"] {
+    flex: 1;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 12px 16px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    color: var(--text);
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  input[type="text"]::placeholder { color: var(--muted); }
+
+  input[type="text"]:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-dim);
+  }
+
+  button {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    border: none;
+    border-radius: 6px;
+    transition: all 0.15s;
+  }
+
+  .btn-add {
+    background: var(--accent);
+    color: #000;
+    padding: 12px 20px;
+    letter-spacing: 0.5px;
+  }
+
+  .btn-add:hover {
+    background: #00ffb3;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 20px rgba(0,255,157,0.3);
+  }
+
+  .btn-add:active { transform: translateY(0); }
+
+  /* SECTION LABEL */
+  .section-label {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 12px;
+    animation: fadeDown 0.5s 0.2s ease both;
+  }
+
+  /* TASK LIST */
+  #task-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .task-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px 16px;
+    animation: fadeIn 0.25s ease both;
+    transition: border-color 0.2s, background 0.2s;
+  }
+
+  .task-item:hover {
+    border-color: #2a2a3e;
+    background: #13131c;
+  }
+
+  .task-item.done {
+    opacity: 0.45;
+  }
+
+  .task-id {
+    font-size: 10px;
+    color: var(--muted);
+    min-width: 28px;
+  }
+
+  .task-title {
+    flex: 1;
+    font-size: 13px;
+    color: var(--text);
+    transition: color 0.2s;
+  }
+
+  .task-item.done .task-title {
+    text-decoration: line-through;
+    color: var(--muted);
+  }
+
+  .btn-done {
+    background: var(--accent-dim);
+    color: var(--accent);
+    border: 1px solid rgba(0,255,157,0.2);
+    padding: 5px 10px;
+    font-size: 11px;
+  }
+
+  .btn-done:hover {
+    background: var(--accent-dim2);
+  }
+
+  .task-item.done .btn-done {
+    background: transparent;
+    color: var(--muted);
+    border-color: var(--border);
+  }
+
+  .btn-delete {
+    background: var(--danger-dim);
+    color: var(--danger);
+    border: 1px solid rgba(255,68,102,0.2);
+    padding: 5px 10px;
+    font-size: 11px;
+  }
+
+  .btn-delete:hover {
+    background: rgba(255,68,102,0.2);
+  }
+
+  /* EMPTY STATE */
+  .empty {
+    text-align: center;
+    padding: 48px 0;
+    color: var(--muted);
+    font-size: 12px;
+    border: 1px dashed var(--border);
+    border-radius: 8px;
+    animation: fadeIn 0.3s ease both;
+  }
+
+  .empty-icon {
+    font-size: 32px;
+    margin-bottom: 12px;
+    opacity: 0.4;
+  }
+
+  /* ERROR */
+  .error-msg {
+    background: var(--danger-dim);
+    border: 1px solid rgba(255,68,102,0.3);
+    color: var(--danger);
+    padding: 10px 14px;
+    border-radius: 6px;
+    font-size: 12px;
+    margin-bottom: 16px;
+    display: none;
+  }
+
+  /* ANIMATIONS */
+  @keyframes fadeDown {
+    from { opacity: 0; transform: translateY(-12px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(6px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <header>
+    <div class="header-label">// devops pet project</div>
+    <h1>Todo <span>API</span></h1>
+    <div class="status-bar">
+      <div class="status-dot"></div>
+      <span id="status-text">connecting...</span>
+    </div>
+  </header>
+
+  <div class="add-form">
+    <input type="text" id="new-task" placeholder="новая задача..." maxlength="200">
+    <button class="btn-add" onclick="addTask()">+ ADD</button>
+  </div>
+
+  <div class="error-msg" id="error-msg"></div>
+
+  <div class="section-label">// tasks</div>
+  <div id="task-list"></div>
+
+</div>
+
+<script>
+  const API = '/tasks';
+
+  async function loadTasks() {
+    try {
+      const res = await fetch(API);
+      if (!res.ok) throw new Error('API error');
+      const tasks = await res.json();
+      renderTasks(tasks);
+      document.getElementById('status-text').textContent =
+        `nginx → flask → postgres · ${tasks.length} task${tasks.length !== 1 ? 's' : ''}`;
+    } catch (e) {
+      showError('Не удалось загрузить задачи');
+      document.getElementById('status-text').textContent = 'connection error';
+    }
+  }
+
+  function renderTasks(tasks) {
+    const list = document.getElementById('task-list');
+    if (tasks.length === 0) {
+      list.innerHTML = `
+        <div class="empty">
+          <div class="empty-icon">▢</div>
+          <div>задач пока нет</div>
+        </div>`;
+      return;
+    }
+    list.innerHTML = tasks.map(t => `
+      <div class="task-item ${t.done ? 'done' : ''}" id="task-${t.id}">
+        <span class="task-id">#${t.id}</span>
+        <span class="task-title">${escapeHtml(t.title)}</span>
+        <button class="btn-done" onclick="toggleDone(${t.id}, '${escapeHtml(t.title)}', ${t.done})">
+          ${t.done ? 'undo' : 'done'}
+        </button>
+        <button class="btn-delete" onclick="deleteTask(${t.id})">del</button>
+      </div>
+    `).join('');
+  }
+
+  async function addTask() {
+    const input = document.getElementById('new-task');
+    const title = input.value.trim();
+    if (!title) return;
+
+    try {
+      const res = await fetch(API, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title })
+      });
+      if (!res.ok) throw new Error();
+      input.value = '';
+      hideError();
+      loadTasks();
+    } catch {
+      showError('Не удалось добавить задачу');
+    }
+  }
+
+  async function toggleDone(id, title, done) {
+    try {
+      await fetch(`${API}/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title, done: !done })
+      });
+      loadTasks();
+    } catch {
+      showError('Не удалось обновить задачу');
+    }
+  }
+
+  async function deleteTask(id) {
+    try {
+      await fetch(`${API}/${id}`, { method: 'DELETE' });
+      loadTasks();
+    } catch {
+      showError('Не удалось удалить задачу');
+    }
+  }
+
+  function showError(msg) {
+    const el = document.getElementById('error-msg');
+    el.textContent = msg;
+    el.style.display = 'block';
+  }
+
+  function hideError() {
+    document.getElementById('error-msg').style.display = 'none';
+  }
+
+  function escapeHtml(str) {
+    return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  // Enter для добавления
+  document.getElementById('new-task').addEventListener('keydown', e => {
+    if (e.key === 'Enter') addTask();
+  });
+
+  loadTasks();
+</script>
+</body>
+</html>
