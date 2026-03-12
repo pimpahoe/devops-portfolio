@@ -1,10 +1,12 @@
 services:
   db:
     image: postgres:16-alpine
+    #env_file: можно двумя способами
+     # - .env
     environment:
-      POSTGRES_DB: tododb
-      POSTGRES_USER: todouser
-      POSTGRES_PASSWORD: todopass
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
