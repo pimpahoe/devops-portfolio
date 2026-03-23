@@ -4,4 +4,4 @@ __pycache__/
 .env
 .dockerignore
 .README.md
-.leetcode.py
+leetcode.py
