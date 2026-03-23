@@ -18,6 +18,8 @@ services:
       DB_NAME: tododb
       DB_USER: todouser
       DB_PASSWORD: todopass
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
     depends_on:
       - "db"
 
@@ -29,6 +31,8 @@ services:
       DB_NAME: tododb
       DB_USER: todouser
       DB_PASSWORD: todopass
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
     depends_on:
       - "db"
 
@@ -42,6 +46,9 @@ services:
     depends_on:
       - "app1"
       - "app2"
+
+  redis:
+    image: redis:7-alpine
 
 volumes:
   postgres_data:

@@ -1,6 +1,10 @@
 from flask import Flask, jsonify, request, abort
 import psycopg2
 import os
+import redis as redis_client
+import json
+import sys
+sys.stdout = sys.stderr
 
 app = Flask(__name__)
 
@@ -11,6 +15,13 @@ def get_db():
         database=os.environ.get("DB_NAME", "tododb"),
         user=os.environ.get("DB_USER", "todouser"),
         password=os.environ.get("DB_PASSWORD", "todopass")
+    )
+
+def get_redis():
+    return redis_client.Redis(
+        host=os.environ.get("REDIS_HOST", "localhost"),
+        port=os.environ.get("REDIS_PORT", 6379),
+        decode_responses=True
     )
 
 def init_db():
@@ -41,13 +52,28 @@ def init_db():
 # GET /tasks — список всех задач
 @app.route("/tasks", methods=["GET"])
 def get_tasks():
+    print(">>> GET TASKS CALLED")  # ← первая строка функции
+    try:
+        cache = get_redis()
+        cached = cache.get("tasks")
+        if cached:
+            print(">>> CACHE HIT")
+            return jsonify(json.loads(cached)), 200
+        print(">>> CACHE MISS — идём в БД")
+    except Exception as e:
+        print(f">>> REDIS ERROR: {e}")
+
     conn = get_db()
     cur = conn.cursor()
     cur.execute("SELECT id, title, done FROM tasks ORDER BY id")
     rows = cur.fetchall()
     cur.close()
     conn.close()
+
     tasks = [{"id": r[0], "title": r[1], "done": r[2]} for r in rows]
+
+    get_redis().set("tasks", json.dumps(tasks), ex=60)
+
     return jsonify(tasks), 200
 
 
@@ -69,6 +95,8 @@ def create_task():
     conn.commit()
     cur.close()
     conn.close()
+
+    get_redis().delete("tasks")
 
     return jsonify({"id": task_id, "title": data["title"], "done": data.get("done", False)}), 201
 
@@ -94,6 +122,8 @@ def update_task(task_id):
     if row is None:
         abort(404, description=f"Task {task_id} not found")
 
+    get_redis().delete("tasks")
+
     return jsonify({"id": task_id, "title": data.get("title"), "done": data.get("done", False)}), 200
 
 
@@ -113,6 +143,8 @@ def delete_task(task_id):
 
     if row is None:
         abort(404, description=f"Task {task_id} not found")
+
+    get_redis().delete("tasks")
 
     return jsonify({"message": f"Task {task_id} deleted"}), 200
 
